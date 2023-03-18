@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { createServer, IncomingMessage } from "http";
 import { Company, JobOpportunity, Lead } from './domain';
 import { actionDepartmentMap } from './domain/Lead';
 import { AirtableLeadRepository } from './infra/repositories/AirtableLeadRepository';
@@ -108,8 +109,6 @@ async function main() {
 
   //await prisma.$disconnect()
 }
-
-main()
 
 const USStates: Record<string, string> = {
   "AL": "Alabama",
@@ -317,3 +316,41 @@ async function getCompany(companyName: string): Promise<Company | undefined> {
     })
   }
 }
+
+function getRawBody(req: IncomingMessage): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    let body = Buffer.alloc(0);
+
+    req.on("data", (chunk) => {
+      body = Buffer.concat([body, chunk]);
+    });
+
+    req.on("end", () => {
+      resolve(body);
+    });
+
+    req.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
+
+const server = createServer(async (req, res) => {
+  const { method, url } = req;
+  
+  if (method === "POST" && url === "/api/apollo") {
+    const body = await getRawBody(req);
+    
+    console.log(body.toString());
+
+  }
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ name: "John Doe" }));
+});
+
+server.listen(process.env.PORT || 3000, () => {
+  console.log("> Ready on http://localhost:3000");
+})
+
