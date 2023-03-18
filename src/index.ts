@@ -1,60 +1,39 @@
-import { HiringManager, PotentialMatch, PrismaClient } from '@prisma/client';
 import dotenv from "dotenv";
-import { Company, JobOpportunity } from './domain';
-const prisma = new PrismaClient()
+import { Company, JobOpportunity, Lead } from './domain';
+import { actionDepartmentMap } from './domain/Lead';
+import { AirtableLeadRepository } from './infra/repositories/AirtableLeadRepository';
+
 dotenv.config()
 
-async function main({ searchedCompanyName  }:{ searchedCompanyName?: string; }) {
-    await prisma.$connect()
-    const airtableView = 'viwTCY5Ia7wnF28Ys'
+async function main() {
+    const airtableClient = new AirtableLeadRepository()
+    const leads = await airtableClient.getLeads()
 
-    const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/listRecords`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.AIRTABLE_API_KEY}`
-      },
-      body: JSON.stringify({
-        view: airtableView,
-        fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location"]
-      })
-    })
-
-    const airtableData = await airtableResponse.json()
-
-    await prisma.potentialMatch.deleteMany({})
+    const alreadyProcessedLeads = new Set()
     
-    for (let i = 0; i < airtableData.records.length; i++) {
-      const row = airtableData.records[i].fields;
-      const rowId = airtableData.records[i].id
+    for (let i = 0; i < 100; i++) {
+      const lead = leads[i]
 
-      const job = new JobOpportunity({
-        title: row.job_title,
-        description: row.job_description,
-        location: row.location,
-      })
-      
-      const company = await getCompany(row.company_name)
-
-      const potentialMatch: Omit<PotentialMatch, 'id' | 'createdAt'> = {
-        actionName: row.action_name,
-        job: job,
-        company: company,
-        potentialHiringManagers: [],
-        apolloQueryUsed: '',
-        foundMatch: false,
-        reasonForNoMatch: null
+      if (lead.jobOpportunity.getPossibleManagerSeniorities().length === 0 || !lead.jobOpportunity.title) {
+        continue;
       }
+
+      if (lead.departments.length === 0) {
+        continue;
+      }
+
+      const leadId = `${lead.jobOpportunity.title}-${lead.jobOpportunity.description}-${lead.jobOpportunity.location}-${lead.action}`
+
+      if (alreadyProcessedLeads.has(leadId)) {
+        continue;
+      }
+
+      alreadyProcessedLeads.add(leadId)
+      
+      const company = await getCompany(lead.company.name)
   
       if (!company || !company.domain) {
-        await prisma.potentialMatch.create({
-          data: {
-            ...potentialMatch,
-            reasonForNoMatch: 'Company not found'
-          }
-        })
-
-        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${rowId}`, {
+        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${lead.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -64,42 +43,24 @@ async function main({ searchedCompanyName  }:{ searchedCompanyName?: string; }) 
               fields: {
                 company_employee_search_source: `Mateus API (Company not found)`,
                 company_staff_count: 0,
+                source: lead.jobOpportunity.getSource()
               }
           }),
         }) 
+
         continue
       }
 
       const { potentialHiringManagers, apolloQueryUsed } = await findOrganizationPotentialHiringManagers({
         company: company,
-        job: job,
+        job: lead.jobOpportunity,
+        lead: lead,
       });
 
-      if (potentialHiringManagers.length === 0) {
-        await prisma.potentialMatch.create({
-          data: {
-            ...potentialMatch,
-            apolloQueryUsed,
-            foundMatch: false,
-            reasonForNoMatch: company.employeeCount === 0 ? 'Company not found' : 'No potential hiring managers found'
-          }
-        })
-      } else { 
-        await prisma.potentialMatch.create({
-          data: {
-            ...potentialMatch,
-            potentialHiringManagers,
-            apolloQueryUsed,
-            foundMatch: true
-          }
-        })
-      }
-
       const [foundMatch] = potentialHiringManagers
-      console.log(foundMatch)
-
+      
       if (foundMatch) {
-        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${rowId}`, {
+        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${lead.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -118,14 +79,12 @@ async function main({ searchedCompanyName  }:{ searchedCompanyName?: string; }) 
                 company_employee_search_source: "Mateus API",
                 company_website: `https://${company.domain}`,
                 company_staff_count: company.employeeCount,
+                source: lead.jobOpportunity.getSource()
               }
           }),
         }) 
-
-        // const airtableData = await airtableResponse.json()
-        // console.log(airtableData)
       } else {
-        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${rowId}`, {
+        const airtableResponse = await fetch(`https://api.airtable.com/v0/app03KmZkL6KyuLTk/tblqaJ6uGTxsYnyMg/${lead.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -136,22 +95,21 @@ async function main({ searchedCompanyName  }:{ searchedCompanyName?: string; }) 
                 company_employee_search_source: `Mateus API (${company.employeeCount === 0 ? 'Company not found' : 'No match found'})`,
                 company_website: `https://${company.domain}`,
                 company_staff_count: company.employeeCount,
+                source: lead.jobOpportunity.getSource()
               }
           }),
         }) 
       }
 
-      console.log(`Finished ${i + 1} of ${airtableData.records.length} records`)
+      console.log(`Finished ${i + 1} of ${leads.length} records`)
       
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-  await prisma.$disconnect()
+  //await prisma.$disconnect()
 }
 
-main({
-  searchedCompanyName: "Mountain Racing Products"
-})
+main()
 
 const USStates: Record<string, string> = {
   "AL": "Alabama",
@@ -207,8 +165,8 @@ const USStates: Record<string, string> = {
   "WY": "Wyoming"
 }
 
-async function findOrganizationPotentialHiringManagers({ company, job }: { company: Company, job: JobOpportunity }): Promise<{
-  potentialHiringManagers: HiringManager[];
+async function findOrganizationPotentialHiringManagers({ company, job, lead }: { company: Company, job: JobOpportunity, lead: Lead }): Promise<{
+  potentialHiringManagers: any[];
   apolloQueryUsed: string;
 }> {
   const apolloQuery: {
@@ -216,11 +174,10 @@ async function findOrganizationPotentialHiringManagers({ company, job }: { compa
     person_seniorities?: string[];
     person_locations?: string[];
     q_keywords?: string;
-  } = {
-    person_department_or_subdepartments: ["executive", "founder", "sales_executive", "master_sales"],
-    person_locations: ['United States']
-  }
+  } = {}
 
+  apolloQuery.person_locations = lead.location
+  apolloQuery.person_department_or_subdepartments = lead.departments
   apolloQuery.person_seniorities = job.getPossibleManagerSeniorities()
 
   const response = await fetch("https://api.apollo.io/v1/mixed_people/search", {
@@ -239,7 +196,7 @@ async function findOrganizationPotentialHiringManagers({ company, job }: { compa
   const data = await response.json();
 
   if (data.people && data.people.length > 0) {
-    const potentialHiringManagers = (data.people as any[]).map<HiringManager>(person => ({
+    const potentialHiringManagers = (data.people as any[]).map<any>(person => ({
       firstName: person.first_name,
       lastName: person.last_name,
       email: person.email,
@@ -258,63 +215,73 @@ async function findOrganizationPotentialHiringManagers({ company, job }: { compa
       };
     }
 
-    const jobTitleTerms = job.title.split(" ")
-    const jobLocations = job.location.split(",").map(location => location.replace(/[^a-zA-Z\s]/g, '')).map(location => location.trim()).filter(location => location !== 'Remote' && location !== 'United States').map(location => location.length === 2 ? USStates[location] : location)
+    const jobTitleTerms = job.title?.split(" ")
+    const jobLocations = job.location?.split(",").map(location => location.replace(/[^a-zA-Z\s]/g, '')).map(location => location.trim()).filter(location => location !== 'Remote' && location !== lead.location[0]) ?? []//.map(location => location.length === 2 ? USStates[location] : location) ?? []
 
-    console.log(jobLocations)
+    const actionDepartments = actionDepartmentMap[lead.action]
 
     return {
-      potentialHiringManagers: potentialHiringManagers.sort((a, b) => {
+      potentialHiringManagers: potentialHiringManagers?.sort((a, b) => {
         let aPoints = 0;
         let bPoints = 0;
   
-        if (a.departments.includes('master_sales') || a.departments.includes('sales_executive')) {
+        const aIsFromDepartment = actionDepartments.some(department => a.departments?.includes(department))
+        const bIsFromDepartment = actionDepartments.some(department => b.departments?.includes(department))
+        if (aIsFromDepartment) {
           aPoints += 1.5;
         }
 
-        if (a.departments.length > 1 && (!a.departments.includes('master_sales') || !a.departments.includes('sales_executive'))) {
+        if (a.departments?.length > 1 && !aIsFromDepartment) {
           aPoints -= 1;
         }
 
-        if (b.departments.includes('master_sales') || b.departments.includes('sales_executive')) {
+        if (bIsFromDepartment) {
           bPoints += 1.5;
         }
 
-        if (b.departments.length > 1 && (!b.departments.includes('master_sales') || !b.departments.includes('sales_executive'))) {
+        if (b.departments?.length > 1 && !bIsFromDepartment) {
           bPoints -= 1;
         }
         
         if (company.employeeCount < 50) {
-          if (a.title.includes('CEO')) {
+          if (a.title?.includes('CEO') || a.departments?.includes('founder')) {
             aPoints += 0.2;
           }
-          if (b.title.includes('CEO')) {
+          if (b.title?.includes('CEO') || b.departments?.includes('founder')) {
             bPoints += 0.2;
           }
         }
+
+        if (job.description?.includes(a.title)) {
+          aPoints += 2;
+        }
+
+        if (job.description?.includes(b.title)) {
+          bPoints += 2;
+        }
  
         jobTitleTerms.forEach(term => {
-          if (a.title.includes(term)) {
-            aPoints += 1.5;
+          if (a.title?.includes(term)) {
+            aPoints += 0.5;
           }
           
-          if (b.title.includes(term)) {
-            bPoints += 1.5;
+          if (b.title?.includes(term)) {
+            bPoints += 0.5;
           }
         })
 
         jobLocations.forEach(location => {
-          if (a.location.includes(location)) {
+          if (a.location?.includes(location)) {
             aPoints += 0.5;
           }
 
-          if (b.location.includes(location)) {
+          if (b.location?.includes(location)) {
             bPoints += 0.5;
           }
         })
 
         return bPoints - aPoints;
-      }),
+      }) ?? [],
       apolloQueryUsed: JSON.stringify(apolloQuery)
     };
   }

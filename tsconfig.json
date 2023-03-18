@@ -14,5 +14,5 @@
     "sourceMap": true,
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src/*", "src/domain/JobOpportunity.ts"]
+  "include": ["src/*", "src/domain/JobOpportunity.ts", "src/domain/repositories"]
 }
