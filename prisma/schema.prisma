@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExperienceLevel {
+  Internship
+  Associate
+  EntryLevel
+  MidSeniorLevel
+  Director
+  Executive
+}
+
+enum Source {
+  LinkedIn
+  Indeed
+  Monster
+}
+
+enum MatchResult {
+  MatchFound
+  MatchNotFound
+  CompanyNotFound
+}
+
+enum Actions {
+  AutoUp
+  J2BDMarketing
+  J2BDChefSecteur
+  J2BDSalesHead
+  J2BDLogistics
+  J2BDHRManager
+  DigitalOrbisIT
+  DigitalOrbisFinance
+}
+
+model JobOffer {
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String?
+  location        String?
+  url             String           @unique
+  experienceLevel ExperienceLevel?
+  source          Source?
+  Company         Company          @relation(fields: [companyId], references: [id])
+  companyId       Int
+  Lead            Lead[]
+}
+
+model Company {
+  id            Int             @id @default(autoincrement())
+  name          String
+  website       String?
+  staffCount    Int             @default(0)
+  offers        JobOffer[]
+  HiringManager HiringManager[]
+
+  @@unique([name, website])
+}
+
+model HiringManager {
+  id          Int     @id @default(autoincrement())
+  firstName   String
+  lastName    String?
+  jobTitle    String?
+  email       String?
+  emailStatus String?
+  linkedInUrl String  @unique
+  location    String
+  company     Company @relation(fields: [companyId], references: [id])
+  companyId   Int
+  Lead        Lead[]
+}
+
+model Lead {
+  id              Int            @id @default(autoincrement())
+  matchResult     MatchResult
+  actionName      Actions
+  jobOffer        JobOffer       @relation(fields: [jobOfferId], references: [id])
+  jobOfferId      Int
+  hiringManager   HiringManager? @relation(fields: [hiringManagerId], references: [id])
+  hiringManagerId Int?
+  createdAt       DateTime       @default(now())
+}

@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "JobOffer" ALTER COLUMN "description" DROP NOT NULL,
+ALTER COLUMN "location" DROP NOT NULL,
+ALTER COLUMN "source" DROP NOT NULL;

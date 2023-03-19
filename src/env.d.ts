@@ -7,5 +7,6 @@ declare namespace NodeJS {
     AIRTABLE_VIEW_ID: string;
     OPEN_AI_API_KEY: string;
     DATABASE_URL: string;
+    BROWSE_AI_API_KEY: string;
   }
 }

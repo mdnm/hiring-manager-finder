@@ -8,15 +8,15 @@ export type Department = typeof departments[number]
 export const actionDepartmentMap: Record<string, Department[]> = {
   "AutoUp": ["sales_executive", "master_sales"],
   "AutoUp BDR": ["sales_executive", "master_sales"],
-  "Malt NL Back-End": ["information_technology_executive", "master_information_technology"],
-  "Malt NL Marketing": ["marketing_executive", "master_marketing"],
-  "Malt NL Graphic Design Indeed": ["marketing_executive", "design", "master_marketing"],
-  //"Malt NL Indeed Interim": ["human_resources_executive", "master_human_resources"], // confirm
-  "Malt NL Engineering": ["master_engineering_technical", "master_operations", "operations_executive"],
-  "Malt NL Finance": ["finance_executive", "master_finance"],
-  //"Malt BE Freelance": ["sales_executive", "master_sales"], // confirm
-  //"Malt BE Belgium Total": ["sales_executive", "master_sales"], // confirm
-  //"Malt BE Wallonia Total": ["sales_executive", "master_sales"], // confirm
+  // "Malt NL Back-End": ["information_technology_executive", "master_information_technology"],
+  // "Malt NL Marketing": ["marketing_executive", "master_marketing"],
+  // "Malt NL Graphic Design Indeed": ["marketing_executive", "design", "master_marketing"],
+  // //"Malt NL Indeed Interim": ["human_resources_executive", "master_human_resources"], // confirm
+  // "Malt NL Engineering": ["master_engineering_technical", "master_operations", "operations_executive"],
+  // "Malt NL Finance": ["finance_executive", "master_finance"],
+  // //"Malt BE Freelance": ["sales_executive", "master_sales"], // confirm
+  // //"Malt BE Belgium Total": ["sales_executive", "master_sales"], // confirm
+  // //"Malt BE Wallonia Total": ["sales_executive", "master_sales"], // confirm
   "J2BD Marketing": ["marketing_executive", "master_marketing"],
   "J2BD Chef de Secteur": ["master_engineering_technical", "master_operations", "master_marketing", "operations_executive", "marketing_executive"],
   "J2BD Head of Sales": ["sales_executive", "master_sales"],
@@ -48,22 +48,26 @@ const actionLocationMap: Record<string, string[]> = {
 }
 
 export class Lead {
-  id: string
+  id?: string
   jobOpportunity: JobOpportunity
   potentialHiringManager: HiringManager
   departments: Department[]
   location: string[] | null
   company: Company
   action: string
+  timestamp: string
+  alreadyProcessed: boolean
   
   private source: string
 
-  constructor({ id, action, jobOpportunity, company }:{id: string, action: string, jobOpportunity: JobOpportunity; company: Company}) {
+  constructor({ id, action, jobOpportunity, company, timestamp, alreadyProcessed }:{id?: string, action: string, jobOpportunity: JobOpportunity; company: Company, timestamp: string, alreadyProcessed: boolean}) {
     this.id = id
     this.action = action
     this.jobOpportunity = jobOpportunity
     this.company = company
     this.source = "Mateus API"
+    this.timestamp = timestamp
+    this.alreadyProcessed = alreadyProcessed
 
     this.departments = this.getDepartments()
     this.location = actionLocationMap[action] ?? null
