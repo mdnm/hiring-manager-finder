@@ -28,18 +28,30 @@ async function main() {
     const lead = leads[i]
 
     if (lead.alreadyProcessed) {
-      break;
+     break;
     }
 
     if (!lead.jobOpportunity.title) {
       continue;
     }
 
-    const existingJobOffer = await prisma.jobOffer.findUnique({
+    const sameUrlJobOffer = await prisma.jobOffer.findUnique({
       where: {
         url: lead.jobOpportunity.url
       }
     })
+
+    if ((sameUrlJobOffer && sameUrlJobOffer.title === lead.jobOpportunity.title && sameUrlJobOffer.description === lead.jobOpportunity.description)) {
+      continue;
+    }
+
+    const existingJobOffer = await prisma.jobOffer.findFirst({
+      where: {
+        title: lead.jobOpportunity.title,
+        description: lead.jobOpportunity.description
+      }
+    })
+
     if (existingJobOffer) {
       continue
     }
@@ -70,14 +82,24 @@ async function main() {
           companyId = createdCompany.id
         }
 
-        const jobOffer = await tx.jobOffer.create({
-          data: {
+        const jobOffer = await tx.jobOffer.upsert({
+          create: {
             title: lead.jobOpportunity.title,
             description: lead.jobOpportunity.description,
             location: lead.jobOpportunity.location,
             url: lead.jobOpportunity.url,
             source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
             companyId: companyId,
+          },
+          update: {
+            title: lead.jobOpportunity.title,
+            description: lead.jobOpportunity.description,
+            location: lead.jobOpportunity.location,
+            source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
+            companyId: companyId,
+          },
+          where: {
+            url: lead.jobOpportunity.url,
           }
         })
 
@@ -138,14 +160,24 @@ async function main() {
           companyId = createdCompany.id
         }
 
-        const createdJobOffer = await tx.jobOffer.create({
-          data: {
+        const createdJobOffer = await tx.jobOffer.upsert({
+          create: {
             title: lead.jobOpportunity.title,
             description: lead.jobOpportunity.description,
             location: lead.jobOpportunity.location,
             url: lead.jobOpportunity.url,
             source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
             companyId: companyId,
+          },
+          update: {
+            title: lead.jobOpportunity.title,
+            description: lead.jobOpportunity.description,
+            location: lead.jobOpportunity.location,
+            source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
+            companyId: companyId,
+          },
+          where: {
+            url: lead.jobOpportunity.url,
           }
         })
 
@@ -211,14 +243,24 @@ async function main() {
           companyId = createdCompany.id
         }
 
-        const createdJobOffer = await tx.jobOffer.create({
-          data: {
+        const createdJobOffer = await tx.jobOffer.upsert({
+          create: {
             title: lead.jobOpportunity.title,
             description: lead.jobOpportunity.description,
             location: lead.jobOpportunity.location,
             url: lead.jobOpportunity.url,
             source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
             companyId: companyId,
+          },
+          update: {
+            title: lead.jobOpportunity.title,
+            description: lead.jobOpportunity.description,
+            location: lead.jobOpportunity.location,
+            source: source === 'linkedin' ? Source.LinkedIn : source === 'indeed' ? Source.Indeed : undefined,
+            companyId: companyId,
+          },
+          where: {
+            url: lead.jobOpportunity.url,
           }
         })
 

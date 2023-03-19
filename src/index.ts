@@ -45,14 +45,25 @@ app.post("/api/find-matches", async (req: Request<{}, any, BrowseAITask>, res) =
     const airtableLeads = []
 
     for (const lead of leads) {
-      const existingJobOffer = await prisma.jobOffer.findUnique({
+      const sameUrlJobOffer = await prisma.jobOffer.findUnique({
         where: {
           url: lead.jobOpportunity.url
         }
       })
 
-      if (existingJobOffer && lead.jobOpportunity.title === existingJobOffer.title && lead.jobOpportunity.description === existingJobOffer.description) {
+      if ((sameUrlJobOffer && sameUrlJobOffer.title === lead.jobOpportunity.title && sameUrlJobOffer.description === lead.jobOpportunity.description)) {
         continue;
+      }
+
+      const existingJobOffer = await prisma.jobOffer.findFirst({
+        where: {
+          title: lead.jobOpportunity.title,
+          description: lead.jobOpportunity.description
+        }
+      })
+
+      if (existingJobOffer) {
+        continue
       }
 
       const company = await getCompany(lead.company.name, prisma);
@@ -318,7 +329,7 @@ type BrowseAITask = {
         Industries?: string,
       }[]
     }
-  }  
+  }
 }
 
 app.listen(process.env.PORT || 3000, () => {

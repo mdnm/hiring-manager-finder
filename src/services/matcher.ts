@@ -41,7 +41,7 @@ export async function findOrganizationPotentialHiringManagers({ company, job, le
   }>("https://api.apollo.io/v1/mixed_people/search", {
     api_key: process.env.APOLLO_API_KEY,
     page: 1,
-    q_organization_domains: company.domain,
+    q_organization_domains: company.domain ?  company.domain : company.website.replace(/https?:\/\//, '').replace(/\/$/, ''),
     ...apolloQuery
   })
 
