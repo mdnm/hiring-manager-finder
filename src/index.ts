@@ -10,7 +10,7 @@ dotenv.config()
 
 const app = express()
 
-app.post("/api/apollo", async (req: Request<{}, any, BrowseAITask>, res) => {
+app.post("/api/find-matches", async (req: Request<{}, any, BrowseAITask>, res) => {
   const body = req.body;
 
   try {
