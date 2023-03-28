@@ -66,7 +66,7 @@ export async function findOrganizationPotentialHiringManagers({ company, job, le
     }
 
     let jobLocations = job.location?.split(",").map(location => location.replace(/[^a-zA-Z\s]/g, '')).map(location => location.trim()).filter(location => location !== 'Remote' && location !== lead.location[0]) 
-    
+  
     if (lead.location[0] === 'United States' && source === 'indeed') {
       jobLocations = jobLocations.map(location => location.length === 2 ? USStates[location] : location) ?? []
     }

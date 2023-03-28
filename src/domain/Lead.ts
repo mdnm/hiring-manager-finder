@@ -24,6 +24,7 @@ export const actionDepartmentMap: Record<string, Department[]> = {
   "J2BD HR Manager": ["human_resources_executive", "master_human_resources"],
   "Digital Orbis IT": ["information_technology_executive", "master_information_technology"],
   "Digital Orbis Fin": ["finance_executive", "master_finance"],
+  "Decent": ["master_engineering_technical", "master_operations", "master_marketing", "operations_executive", "marketing_executive", "sales_executive", "master_sales"],
 }
 
 const actionLocationMap: Record<string, string[]> = {
@@ -45,6 +46,7 @@ const actionLocationMap: Record<string, string[]> = {
   "J2BD HR Manager": ["France"],
   "Digital Orbis IT": ["Netherlands"],
   "Digital Orbis Fin": ["Netherlands"],
+  "Decent": ["Netherlands"],
 }
 
 export class Lead {

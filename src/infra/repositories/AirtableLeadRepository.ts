@@ -96,7 +96,7 @@ export class AirtableLeadRepository implements LeadRepository {
       view: this.viewId,
       fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location", "action_name", "job_functions", "experience_level", "JobURL", "timestamp", "company_employee_search_source"],
       sort: [{ field: "timestamp", direction: "desc" }],
-    }).firstPage()
+    }).all()
 
     return records.map<Lead>(record => {
       const jobOpportunity = new JobOpportunity({

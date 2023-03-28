@@ -62,6 +62,10 @@ export function toAction(action: string): Actions | undefined {
     return Actions.DigitalOrbisFinance
   }
 
+  if (action === 'Decent') {
+    return Actions.Decent
+  }
+
   return undefined
 }
 

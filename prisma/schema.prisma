@@ -40,6 +40,7 @@ enum Actions {
   J2BDHRManager
   DigitalOrbisIT
   DigitalOrbisFinance
+  Decent
 }
 
 model JobOffer {

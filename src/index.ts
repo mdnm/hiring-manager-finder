@@ -1,10 +1,12 @@
 import { MatchResult, PrismaClient, Source } from "@prisma/client";
 import dotenv from "dotenv";
 import express, { Request } from 'express';
+import cron from 'node-cron';
 import { Company, JobOpportunity, Lead } from './domain';
 import { toAction } from "./helpers";
 import { FetchHTTPClient } from './infra/http/FetchHTTPClient';
 import { findOrganizationPotentialHiringManagers, getCompany } from "./services/matcher";
+import { enrichAirtable } from "./services/tableEnricher";
 
 dotenv.config()
 
@@ -335,3 +337,15 @@ type BrowseAITask = {
 app.listen(process.env.PORT || 3000, () => {
   console.log("> Ready on http://localhost:3000");
 })
+
+
+// schedule a cronjob to run every 2 hours
+cron.schedule('0 */2 * * *', async () => {
+  try {
+    console.log('Running cronjob to enrich Airtable...')
+
+    await enrichAirtable();
+  } catch (error) {
+    console.log(error);
+  }
+});
