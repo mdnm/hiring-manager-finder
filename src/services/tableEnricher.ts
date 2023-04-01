@@ -9,7 +9,6 @@ const airtableViewsMap: Record<string, string> = {
   'AutoUp': 'viwTCY5Ia7wnF28Ys',
   'J2BD': 'viwfSQBRMuwk4mCwj',
   'DigitalOrbis': 'viwZiGDRXPW8tETwO',
-  'Decent': 'viwVjtpQ9L9Ebk1e2'
 }
 
 const ALL_UNMATCHED_LEADS_VIEW = 'viwbLkS6ubnpaRxmx'
@@ -295,7 +294,7 @@ export async function enrichAirtable(action?: string) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
     catch (e) {
-      console.log('error', e)
+      console.log('error', e.message ?? e)
     }
   }
 }

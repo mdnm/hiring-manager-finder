@@ -175,7 +175,7 @@ async function populateDatabase() {
 
     return {
       actionName: toAction(lead.action_name),
-      createdAt: new Date(lead.timestamp),
+      createdAt: new Date(lead.Timestamp),
       jobOfferId: jobOffer?.id,
       hiringManagerId: hiringManager?.id,
       matchResult: toMatchResult(lead.company_employee_search_source)

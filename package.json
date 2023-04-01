@@ -7,15 +7,9 @@
     "build": "tsc",
     "start": "ts-node src/index.ts",
     "enrich-airtable": "ts-node src/enrichAirtable.ts",
-    "enrich-airtable:autoup": "ts-node src/enrichAirtable.ts AutoUp",
-    "enrich-airtable:digital-orbis": "ts-node src/enrichAirtable.ts DigitalOrbis",
-    "enrich-airtable:j2bd": "ts-node src/enrichAirtable.ts J2BD",
-    "enrich-airtable:decent": "ts-node src/enrichAirtable.ts Decent",
-    "populate-database": "ts-node src/populateDatabase.ts",
     "populate-database:autoup": "ts-node src/populateDatabase.ts AutoUp",
     "populate-database:digital-orbis": "ts-node src/populateDatabase.ts DigitalOrbis",
-    "populate-database:j2bd": "ts-node src/populateDatabase.ts J2BD",
-    "populate-database:decent": "ts-node src/populateDatabase.ts Decent"
+    "populate-database:j2bd": "ts-node src/populateDatabase.ts J2BD"
   },
   "keywords": [],
   "author": "",

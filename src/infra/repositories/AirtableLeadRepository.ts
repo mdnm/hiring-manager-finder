@@ -18,7 +18,7 @@ export class AirtableLeadRepository implements LeadRepository {
     if (!process.env.AIRTABLE_BASE_ID && !baseId) {
       throw new Error("AIRTABLE_BASE_ID must be configured in .env file")
     }
-    
+
     if (!process.env.AIRTABLE_TABLE_ID && !tableId) {
       throw new Error("AIRTABLE_TABLE_ID must be configured in .env file")
     }
@@ -26,13 +26,13 @@ export class AirtableLeadRepository implements LeadRepository {
     if (!process.env.AIRTABLE_VIEW_ID && !viewId) {
       throw new Error("AIRTABLE_VIEW_ID must be configured in .env file")
     }
-    
+
     this.client = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY });
     this.base = this.client.base(baseId || process.env.AIRTABLE_BASE_ID)
     this.tableId = tableId || process.env.AIRTABLE_TABLE_ID;
     this.viewId = viewId || process.env.AIRTABLE_VIEW_ID;
   }
-  
+
   public async getAllLeads(): Promise<{
     job_title?: string;
     job_id?: string;
@@ -55,7 +55,7 @@ export class AirtableLeadRepository implements LeadRepository {
     company_website?: string;
     company_staff_count?: number;
     source?: string;
-    timestamp: string;
+    Timestamp: string;
   }[]> {
     const records = await this.base<{
       job_title?: string;
@@ -79,11 +79,11 @@ export class AirtableLeadRepository implements LeadRepository {
       company_website?: string;
       company_staff_count?: number;
       source?: string;
-      timestamp: string;
+      Timestamp: string;
     }>(this.tableId).select({
       view: this.viewId,
-      fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location", "action_name", "job_functions", "experience_level", "JobURL", "Email Status","Email","employee_profile_url","employee_full_name","employee_first_name","employee_last_name","employee_job","employee_location","company_employee_search_source","company_website","company_staff_count","source","timestamp"],
-      sort: [{ field: "timestamp", direction: "desc" }],
+      fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location", "action_name", "job_functions", "experience_level", "JobURL", "Email Status", "Email", "employee_profile_url", "employee_full_name", "employee_first_name", "employee_last_name", "employee_job", "employee_location", "company_employee_search_source", "company_website", "company_staff_count", "source", "Timestamp"],
+      sort: [{ field: "Timestamp", direction: "desc" }],
     }).all()
 
     return Array.from(records).filter(
@@ -92,37 +92,41 @@ export class AirtableLeadRepository implements LeadRepository {
   }
 
   public async getLeads(): Promise<Lead[]> {
-    const records = await this.base(this.tableId).select({
-      view: this.viewId,
-      fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location", "action_name", "job_functions", "experience_level", "JobURL", "timestamp", "company_employee_search_source"],
-      sort: [{ field: "timestamp", direction: "desc" }],
-    }).all()
+    try {
+      const records = await this.base(this.tableId).select({
+        view: this.viewId,
+        fields: ["job_title", "job_id", "action_name", "company_name", "job_description", "location", "action_name", "job_functions", "experience_level", "JobURL", "Timestamp", "company_employee_search_source"],
+        sort: [{ field: "Timestamp", direction: "desc" }],
+      }).all()
 
-    return records.map<Lead>(record => {
-      const jobOpportunity = new JobOpportunity({
-        title: record.fields.job_title,
-        description: record.fields.job_description,
-        location: record.fields.location,
-        jobFunctions: record.fields.job_functions,
-        experienceLevel: record.fields.experience_level,
-        url: record.fields.JobURL,
-      } as unknown)
+      return records.map<Lead>(record => {
+        const jobOpportunity = new JobOpportunity({
+          title: record.fields.job_title,
+          description: record.fields.job_description,
+          location: record.fields.location,
+          jobFunctions: record.fields.job_functions,
+          experienceLevel: record.fields.experience_level,
+          url: record.fields.JobURL,
+        } as unknown)
 
-      const company = new Company({
-        name: record.fields.company_name as string,
+        const company = new Company({
+          name: record.fields.company_name as string,
+        })
+
+        const lead = new Lead({
+          id: record.id,
+          action: record.fields.action_name as string,
+          jobOpportunity,
+          company,
+          timestamp: record.fields.timestamp as string,
+          alreadyProcessed: (record.fields.company_employee_search_source as string)?.includes?.("Mateus"),
+        })
+
+        return lead
       })
-
-      const lead = new Lead({
-        id: record.id,
-        action: record.fields.action_name as string,
-        jobOpportunity,
-        company,
-        timestamp: record.fields.timestamp as string,
-        alreadyProcessed: (record.fields.company_employee_search_source as string)?.includes?.("Mateus"),
-      })
-
-      return lead
-    })
+    } catch (error) {
+      console.log(error.message || error)
+      return []
+    }
   }
-
 }
