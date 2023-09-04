@@ -1,7 +1,7 @@
 import { MatchResult, Prisma, PrismaClient } from "@prisma/client";
 import { DefaultArgs } from "@prisma/client/runtime/library";
 import dotenv from "dotenv";
-import express, { Request } from "express";
+import express, { Request, json } from "express";
 import { Company, JobOpportunity, Lead } from "./domain";
 import {
   findOrganizationPotentialHiringManagers,
@@ -11,6 +11,8 @@ import {
 dotenv.config();
 
 const app = express();
+
+app.use(json());
 
 app.post(
   "/api/find-matches",
@@ -87,8 +89,6 @@ app.post(
       }
     } catch (error) {
       return res.status(500).json({ error: error.message });
-    } finally {
-      await prisma?.$disconnect();
     }
 
     return res.status(200).json({ ok: true });
