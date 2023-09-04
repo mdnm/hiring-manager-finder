@@ -19,41 +19,23 @@ enum ExperienceLevel {
   Executive
 }
 
-enum Source {
-  LinkedIn
-  Indeed
-  Monster
-}
-
 enum MatchResult {
   MatchFound
   MatchNotFound
   CompanyNotFound
 }
 
-enum Actions {
-  AutoUp
-  J2BDMarketing
-  J2BDChefSecteur
-  J2BDSalesHead
-  J2BDLogistics
-  J2BDHRManager
-  DigitalOrbisIT
-  DigitalOrbisFinance
-  Decent
-}
-
 model JobOffer {
-  id              Int              @id @default(autoincrement())
-  title           String
-  description     String?
-  location        String?
-  url             String           @unique
-  experienceLevel ExperienceLevel?
-  source          Source?
-  Company         Company          @relation(fields: [companyId], references: [id])
-  companyId       Int
-  Lead            Lead[]
+  id                 Int              @id @default(autoincrement())
+  title              String
+  description        String?
+  location           String?
+  url                String           @unique
+  timeSincePublished String?
+  experienceLevel    ExperienceLevel?
+  Company            Company          @relation(fields: [companyId], references: [id])
+  companyId          Int
+  Lead               Lead[]
 }
 
 model Company {
@@ -84,7 +66,6 @@ model HiringManager {
 model Lead {
   id              Int            @id @default(autoincrement())
   matchResult     MatchResult
-  actionName      Actions
   jobOffer        JobOffer       @relation(fields: [jobOfferId], references: [id])
   jobOfferId      Int
   hiringManager   HiringManager? @relation(fields: [hiringManagerId], references: [id])
