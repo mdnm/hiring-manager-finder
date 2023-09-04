@@ -95,6 +95,10 @@ app.post(
   }
 );
 
+app.post("/health", (req, res) => {
+  return res.status(200).json({ ok: true });
+});
+
 type PrismaTransaction = Omit<
   PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
