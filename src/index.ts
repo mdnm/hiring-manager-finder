@@ -95,6 +95,39 @@ app.post(
   }
 );
 
+app.get(
+  "/api/leads",
+  async (
+    req: Request<{}, any, any, { page: string; pageSize: string }>,
+    res
+  ) => {
+    const page = parseInt(req.query.page ?? "1");
+    const pageSize = parseInt(req.query.pageSize ?? "10");
+
+    let prisma: PrismaClient;
+
+    try {
+      prisma = new PrismaClient();
+
+      const leads = await prisma.lead.findMany({
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          jobOffer: true,
+          hiringManager: true,
+        },
+        where: {
+          matchResult: MatchResult.MatchFound,
+        },
+      });
+
+      return res.status(200).json({ leads });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 app.get("/health", (req, res) => {
   return res.status(200).json({ ok: true });
 });
