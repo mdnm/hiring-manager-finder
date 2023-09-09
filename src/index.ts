@@ -113,11 +113,18 @@ app.get(
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
-          jobOffer: true,
+          jobOffer: {
+            include: {
+              Company: true,
+            },
+          },
           hiringManager: true,
         },
         where: {
           matchResult: MatchResult.MatchFound,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       });
 
